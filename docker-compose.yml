@@ -1,0 +1,39 @@
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: audit_db
+    environment:
+      POSTGRES_DB: audit
+      POSTGRES_USER: audit_user
+      POSTGRES_PASSWORD: audit_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - audit_network
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: audit_php
+    environment:
+      DATABASE_URL: postgresql://audit_user:audit_password@database:5432/audit
+      APP_ENV: dev
+      APP_SECRET: dev_secret_change_in_production
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "9000:9000"
+    depends_on:
+      - database
+    networks:
+      - audit_network
+
+volumes:
+  db_data:
+
+networks:
+  audit_network:
+    driver: bridge
