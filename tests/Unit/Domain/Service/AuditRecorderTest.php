@@ -10,7 +10,7 @@ use Audit\Domain\Entity\Standard;
 use Audit\Domain\Entity\Supervisor;
 use Audit\Domain\Exception\NoActiveContractException;
 use Audit\Domain\Exception\SupervisorNotAuthorizedException;
-use Audit\Domain\Service\RecordEvaluationService;
+use Audit\Domain\Service\AuditRecorder;
 use Audit\Domain\ValueObject\ClientId;
 use Audit\Domain\ValueObject\ContractId;
 use Audit\Domain\ValueObject\Rating;
@@ -21,7 +21,7 @@ use Audit\Tests\Unit\Support\FixedClock;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
-final class RecordEvaluationServiceTest extends TestCase
+final class AuditRecorderTest extends TestCase
 {
     public function test_records_evaluation_with_valid_contract_and_authority(): void
     {
@@ -32,8 +32,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $evaluation = $service->recordEvaluation(
             $client,
@@ -59,8 +59,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $supervisor = $this->createSupervisor([$standard->getId()]);
 
         $contractRepo = new InMemoryContractRepository([]); // No contracts!
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $service->recordEvaluation(
             $client,
@@ -84,8 +84,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $service->recordEvaluation(
             $client,
@@ -132,8 +132,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         // First evaluation on 2024-01-01
         $first = $service->recordEvaluation(
@@ -144,7 +144,6 @@ final class RecordEvaluationServiceTest extends TestCase
             new DateTimeImmutable('2024-01-01'),
             new DateTimeImmutable('2024-07-01')
         );
-        $evaluationRepo->save($first);
 
         // Try to record again 100 days later (< 180 days) - should fail
         $service->recordEvaluation(
@@ -166,8 +165,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         // First evaluation
         $first = $service->recordEvaluation(
@@ -178,7 +177,6 @@ final class RecordEvaluationServiceTest extends TestCase
             new DateTimeImmutable('2024-01-01'),
             new DateTimeImmutable('2024-07-01')
         );
-        $evaluationRepo->save($first);
 
         // Record again 200 days later (> 180 days) - should succeed
         $second = $service->recordEvaluation(
@@ -205,8 +203,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         // First evaluation is negative
         $first = $service->recordEvaluation(
@@ -217,7 +215,6 @@ final class RecordEvaluationServiceTest extends TestCase
             new DateTimeImmutable('2024-01-01'),
             new DateTimeImmutable('2024-07-01')
         );
-        $evaluationRepo->save($first);
 
         // Try again 20 days later (< 30 days) - should fail
         $service->recordEvaluation(
@@ -239,8 +236,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         // First evaluation is negative
         $first = $service->recordEvaluation(
@@ -251,7 +248,6 @@ final class RecordEvaluationServiceTest extends TestCase
             new DateTimeImmutable('2024-01-01'),
             new DateTimeImmutable('2024-07-01')
         );
-        $evaluationRepo->save($first);
 
         // Record again 40 days later (> 30 days) - should succeed
         $second = $service->recordEvaluation(
@@ -275,8 +271,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $firstAuditDate = new DateTimeImmutable('2024-01-01');
         $first = $service->recordEvaluation(
@@ -287,7 +283,6 @@ final class RecordEvaluationServiceTest extends TestCase
             $firstAuditDate,
             new DateTimeImmutable('2024-07-01')
         );
-        $evaluationRepo->save($first);
 
         // Exactly 180 days later - should succeed
         $secondAuditDate = $firstAuditDate->modify('+180 days');
@@ -312,8 +307,8 @@ final class RecordEvaluationServiceTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $evaluationRepo = new \Audit\Infrastructure\Repository\InMemoryEvaluationRepository();
-        $service = new RecordEvaluationService($contractRepo, $clock, $evaluationRepo);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $firstAuditDate = new DateTimeImmutable('2024-01-01');
         $first = $service->recordEvaluation(
@@ -324,7 +319,6 @@ final class RecordEvaluationServiceTest extends TestCase
             $firstAuditDate,
             new DateTimeImmutable('2024-07-01')
         );
-        $evaluationRepo->save($first);
 
         // Exactly 30 days later - should succeed
         $secondAuditDate = $firstAuditDate->modify('+30 days');
@@ -338,5 +332,148 @@ final class RecordEvaluationServiceTest extends TestCase
         );
 
         $this->assertNotNull($second);
+    }
+
+    public function test_positive_replaces_active_positive(): void
+    {
+        $clock = FixedClock::at('2024-12-01');
+        $client = $this->createClient();
+        $standard = $this->createStandard();
+        $supervisor = $this->createSupervisor([$standard->getId()]);
+        $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
+
+        $contractRepo = new InMemoryContractRepository([$contract]);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
+
+        // First positive evaluation
+        $first = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Positive,
+            new DateTimeImmutable('2024-01-01'),
+            new DateTimeImmutable('2024-08-01') // Expires Aug 1
+        );
+
+        // Second positive 200 days later, BEFORE first expires
+        $second = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Positive,
+            new DateTimeImmutable('2024-07-20'), // Before Aug 1 expiration
+            new DateTimeImmutable('2025-01-20')
+        );
+
+        // BR-13: First should be replaced
+        $this->assertTrue($first->isReplaced());
+        $this->assertFalse($second->isReplaced());
+    }
+
+    public function test_negative_does_not_replace_prior_evaluation(): void
+    {
+        $clock = FixedClock::at('2024-12-01');
+        $client = $this->createClient();
+        $standard = $this->createStandard();
+        $supervisor = $this->createSupervisor([$standard->getId()]);
+        $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
+
+        $contractRepo = new InMemoryContractRepository([$contract]);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
+
+        // First positive evaluation
+        $first = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Positive,
+            new DateTimeImmutable('2024-01-01'),
+            new DateTimeImmutable('2024-08-01')
+        );
+
+        // Second is negative - BR-14: should NOT replace
+        $second = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Negative,
+            new DateTimeImmutable('2024-07-20'),
+            new DateTimeImmutable('2025-01-20')
+        );
+
+        $this->assertFalse($first->isReplaced());
+    }
+
+    public function test_no_replacement_when_prior_already_expired(): void
+    {
+        $clock = FixedClock::at('2024-12-01');
+        $client = $this->createClient();
+        $standard = $this->createStandard();
+        $supervisor = $this->createSupervisor([$standard->getId()]);
+        $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
+
+        $contractRepo = new InMemoryContractRepository([$contract]);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
+
+        // First positive expires July 1
+        $first = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Positive,
+            new DateTimeImmutable('2024-01-01'),
+            new DateTimeImmutable('2024-07-01')
+        );
+
+        // Second audit on July 20 (after first expired) - no replacement
+        $second = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Positive,
+            new DateTimeImmutable('2024-07-20'), // After expiration
+            new DateTimeImmutable('2025-01-20')
+        );
+
+        $this->assertFalse($first->isReplaced()); // Not replaced, just expired
+    }
+
+    public function test_negative_cannot_be_replaced_by_subsequent_positive(): void
+    {
+        $clock = FixedClock::at('2024-12-01');
+        $client = $this->createClient();
+        $standard = $this->createStandard();
+        $supervisor = $this->createSupervisor([$standard->getId()]);
+        $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
+
+        $contractRepo = new InMemoryContractRepository([$contract]);
+        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
+
+        // First negative evaluation
+        $first = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Negative,
+            new DateTimeImmutable('2024-01-01'),
+            new DateTimeImmutable('2024-07-01')
+        );
+
+        // Subsequent positive 40 days later
+        $second = $service->recordEvaluation(
+            $client,
+            $supervisor,
+            $standard,
+            Rating::Positive,
+            new DateTimeImmutable('2024-02-10'), // 40 days later (> 30)
+            new DateTimeImmutable('2024-08-10')
+        );
+
+        // BR-14: Negative cannot be replaced
+        $this->assertFalse($first->isReplaced());
     }
 }

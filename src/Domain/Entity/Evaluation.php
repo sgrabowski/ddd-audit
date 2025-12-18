@@ -70,7 +70,12 @@ final class Evaluation
 
     public function isExpired(Clock $clock): bool
     {
-        return $clock->now() > $this->report->expirationDate;
+        return $this->isExpiredOn($clock->now());
+    }
+
+    public function isExpiredOn(DateTimeImmutable $date): bool
+    {
+        return $date > $this->report->expirationDate;
     }
 
     public function isSuspended(): bool
@@ -95,8 +100,18 @@ final class Evaluation
 
     public function isActive(Clock $clock): bool
     {
-        return !$this->isExpired($clock)
+        return $this->isActiveOn($clock->now());
+    }
+
+    public function isActiveOn(DateTimeImmutable $date): bool
+    {
+        return !$this->isExpiredOn($date)
             && !$this->isReplaced()
             && !$this->isLocked();
+    }
+
+    public function markAsReplaced(EvaluationId $replacedBy): void
+    {
+        $this->replacedBy = $replacedBy;
     }
 }

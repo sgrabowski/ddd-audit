@@ -140,4 +140,56 @@ final class EvaluationTest extends TestCase
             $report
         );
     }
+
+    public function test_is_active_on_specific_date_when_not_expired(): void
+    {
+        $clock = FixedClock::at('2024-06-01');
+        $evaluation = $this->createEvaluationWithDates(
+            new DateTimeImmutable('2024-01-15'),
+            new DateTimeImmutable('2024-08-15'),
+            $clock
+        );
+
+        $checkDate = new DateTimeImmutable('2024-07-01');
+        $this->assertTrue($evaluation->isActiveOn($checkDate));
+    }
+
+    public function test_is_not_active_on_date_after_expiration(): void
+    {
+        $clock = FixedClock::at('2024-06-01');
+        $evaluation = $this->createEvaluationWithDates(
+            new DateTimeImmutable('2024-01-15'),
+            new DateTimeImmutable('2024-07-15'),
+            $clock
+        );
+
+        $checkDate = new DateTimeImmutable('2024-08-01'); // After expiration
+        $this->assertFalse($evaluation->isActiveOn($checkDate));
+    }
+
+    public function test_can_be_marked_as_replaced(): void
+    {
+        $evaluation = $this->createEvaluation();
+        $newEvaluationId = EvaluationId::generate();
+
+        $this->assertFalse($evaluation->isReplaced());
+
+        $evaluation->markAsReplaced($newEvaluationId);
+
+        $this->assertTrue($evaluation->isReplaced());
+    }
+
+    public function test_is_not_active_when_replaced(): void
+    {
+        $clock = FixedClock::at('2024-06-01');
+        $evaluation = $this->createEvaluationWithDates(
+            new DateTimeImmutable('2024-01-15'),
+            new DateTimeImmutable('2025-01-15'), // Not expired
+            $clock
+        );
+
+        $evaluation->markAsReplaced(EvaluationId::generate());
+
+        $this->assertFalse($evaluation->isActive($clock));
+    }
 }
