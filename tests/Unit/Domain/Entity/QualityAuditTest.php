@@ -51,7 +51,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-       
+
         $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
@@ -74,7 +74,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-       
+
         $second = $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
@@ -99,7 +99,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-       
+
         $second = $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
@@ -125,7 +125,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-       
+
         $second = $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Negative,

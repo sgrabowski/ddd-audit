@@ -37,15 +37,17 @@ final class QualityAuditLockingTest extends TestCase
 
     public function test_can_unlock_suspended_evaluation(): void
     {
+        // given
         $clock = FixedClock::at('2024-06-01');
         $audit = $this->createAuditWithEvaluation($clock);
-
         $audit->suspendCurrent($clock);
-        $audit->popEvents(); // Clear suspend event
+        $audit->popEvents();
 
+        // when
         $audit->unlockCurrent($clock);
         $events = $audit->popEvents();
 
+        // then
         $this->assertCount(1, $events);
         $this->assertInstanceOf(EvaluationUnlocked::class, $events[0]);
     }
@@ -81,62 +83,70 @@ final class QualityAuditLockingTest extends TestCase
     {
         $this->expectException(AlreadySuspendedException::class);
 
+        // given
         $clock = FixedClock::at('2024-06-01');
         $audit = $this->createAuditWithEvaluation($clock);
-
         $audit->suspendCurrent($clock);
-        $audit->suspendCurrent($clock); // Should fail
+
+        // when / then
+        $audit->suspendCurrent($clock);
     }
 
     public function test_cannot_suspend_withdrawn(): void
     {
         $this->expectException(CannotSuspendWithdrawnException::class);
 
+        // given
         $clock = FixedClock::at('2024-06-01');
         $audit = $this->createAuditWithEvaluation($clock);
-
         $audit->withdrawCurrent($clock);
-        $audit->suspendCurrent($clock); // Should fail
+
+        // when / then
+        $audit->suspendCurrent($clock);
     }
 
     public function test_cannot_unlock_when_not_suspended(): void
     {
         $this->expectException(CannotUnlockException::class);
 
+        // given
         $clock = FixedClock::at('2024-06-01');
         $audit = $this->createAuditWithEvaluation($clock);
 
-        $audit->unlockCurrent($clock); // Not suspended - should fail
+        // when / then
+        $audit->unlockCurrent($clock);
     }
 
     public function test_cannot_withdraw_already_withdrawn(): void
     {
         $this->expectException(AlreadyWithdrawnException::class);
 
+        // given
         $clock = FixedClock::at('2024-06-01');
         $audit = $this->createAuditWithEvaluation($clock);
-
         $audit->withdrawCurrent($clock);
-        $audit->withdrawCurrent($clock); // Should fail
+
+        // when / then
+        $audit->withdrawCurrent($clock);
     }
 
     public function test_cannot_lock_expired_evaluation(): void
     {
         $this->expectException(CannotLockExpiredException::class);
 
+        // given
         $clock = FixedClock::at('2024-06-01');
         $audit = new QualityAudit(ClientId::generate(), StandardId::generate());
-
-        // Create evaluation that's already expired
         $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
             new DateTimeImmutable('2020-01-01'),
-            new DateTimeImmutable('2020-07-01'), // Expired long ago
+            new DateTimeImmutable('2020-07-01'),
             $clock
         );
 
-        $audit->suspendCurrent($clock); // Should fail - it's expired
+        // when / then
+        $audit->suspendCurrent($clock);
     }
 
     private function createAuditWithEvaluation(FixedClock $clock): QualityAudit
@@ -147,7 +157,7 @@ final class QualityAuditLockingTest extends TestCase
             SupervisorId::generate(),
             Rating::Positive,
             new DateTimeImmutable('2024-05-01'),
-            new DateTimeImmutable('2025-05-01'), // Not expired
+            new DateTimeImmutable('2025-05-01'),
             $clock
         );
 

@@ -6,7 +6,6 @@ namespace Audit\Tests\Unit\Domain\Service;
 
 use Audit\Domain\Entity\Contract;
 use Audit\Domain\Entity\QualityAudit;
-use Audit\Domain\Exception\ManagerCannotBeWatcherException;
 use Audit\Domain\Exception\NoActiveContractException;
 use Audit\Domain\Exception\OwnerCannotBeWatcherException;
 use Audit\Domain\Service\AuditManager;

@@ -17,8 +17,10 @@ use Audit\Domain\ValueObject\Rating;
 use Audit\Domain\ValueObject\StandardId;
 use Audit\Domain\ValueObject\SupervisorId;
 use Audit\Infrastructure\Repository\InMemoryContractRepository;
+use Audit\Infrastructure\Repository\InMemoryQualityAuditRepository;
 use Audit\Tests\Unit\Support\FixedClock;
 use DateTimeImmutable;
+use DomainException;
 use PHPUnit\Framework\TestCase;
 
 final class AuditRecorderTest extends TestCase
@@ -32,7 +34,7 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $evaluation = $service->recordEvaluation(
@@ -59,7 +61,7 @@ final class AuditRecorderTest extends TestCase
         $supervisor = $this->createSupervisor([$standard->getId()]);
 
         $contractRepo = new InMemoryContractRepository([]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $service->recordEvaluation(
@@ -84,7 +86,7 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $service->recordEvaluation(
@@ -122,7 +124,7 @@ final class AuditRecorderTest extends TestCase
 
     public function test_rejects_subsequent_positive_within_180_days(): void
     {
-        $this->expectException(\DomainException::class);
+        $this->expectException(DomainException::class);
         $this->expectExceptionMessage('180 days');
 
         $clock = FixedClock::at('2024-06-01');
@@ -132,10 +134,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -145,7 +147,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $service->recordEvaluation(
             $client,
             $supervisor,
@@ -165,10 +167,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -178,7 +180,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -193,7 +195,7 @@ final class AuditRecorderTest extends TestCase
 
     public function test_rejects_subsequent_negative_within_30_days(): void
     {
-        $this->expectException(\DomainException::class);
+        $this->expectException(DomainException::class);
         $this->expectExceptionMessage('30 days');
 
         $clock = FixedClock::at('2024-06-01');
@@ -203,10 +205,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -216,7 +218,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $service->recordEvaluation(
             $client,
             $supervisor,
@@ -236,10 +238,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -249,7 +251,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -271,7 +273,7 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $firstAuditDate = new DateTimeImmutable('2024-01-01');
@@ -284,7 +286,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $secondAuditDate = $firstAuditDate->modify('+180 days');
         $second = $service->recordEvaluation(
             $client,
@@ -307,7 +309,7 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
         $firstAuditDate = new DateTimeImmutable('2024-01-01');
@@ -320,7 +322,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $secondAuditDate = $firstAuditDate->modify('+30 days');
         $second = $service->recordEvaluation(
             $client,
@@ -343,10 +345,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -356,7 +358,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-08-01')
         );
 
-       
+
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -366,7 +368,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2025-01-20')
         );
 
-       
+
         $this->assertTrue($first->isReplaced());
         $this->assertFalse($second->isReplaced());
     }
@@ -380,10 +382,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -393,7 +395,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-08-01')
         );
 
-       
+
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -415,10 +417,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -428,7 +430,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -450,10 +452,10 @@ final class AuditRecorderTest extends TestCase
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
-        $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
+        $auditRepo = new InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-       
+
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -463,7 +465,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-       
+
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -473,7 +475,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-08-10')
         );
 
-       
+
         $this->assertFalse($first->isReplaced());
     }
 }

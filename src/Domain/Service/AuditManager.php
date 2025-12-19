@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Audit\Domain\Service;
 
+use Audit\Domain\Entity\Evaluation;
+use Audit\Domain\Entity\QualityAudit;
 use Audit\Domain\Exception\NoActiveContractException;
 use Audit\Domain\Repository\ContractRepository;
 use Audit\Domain\Repository\QualityAuditRepository;
 use Audit\Domain\ValueObject\ClientId;
 use Audit\Domain\ValueObject\StandardId;
 use Audit\Domain\ValueObject\SupervisorId;
+use DomainException;
 
 final readonly class AuditManager
 {
@@ -33,7 +36,7 @@ final readonly class AuditManager
 
         $audit = $this->qualityAuditRepository->findFor($clientId, $standardId);
         if ($audit === null) {
-            throw new \DomainException('No audit found for client and standard');
+            throw new DomainException('No audit found for client and standard');
         }
 
         $current = $this->getCurrentEvaluation($audit);
@@ -49,7 +52,7 @@ final readonly class AuditManager
     ): void {
         $audit = $this->qualityAuditRepository->findFor($clientId, $standardId);
         if ($audit === null) {
-            throw new \DomainException('No audit found for client and standard');
+            throw new DomainException('No audit found for client and standard');
         }
 
         $current = $this->getCurrentEvaluation($audit);
@@ -65,7 +68,7 @@ final readonly class AuditManager
     ): void {
         $audit = $this->qualityAuditRepository->findFor($clientId, $standardId);
         if ($audit === null) {
-            throw new \DomainException('No audit found for client and standard');
+            throw new DomainException('No audit found for client and standard');
         }
 
         $current = $this->getCurrentEvaluation($audit);
@@ -74,11 +77,11 @@ final readonly class AuditManager
         $this->qualityAuditRepository->save($audit);
     }
 
-    private function getCurrentEvaluation(\Audit\Domain\Entity\QualityAudit $audit): \Audit\Domain\Entity\Evaluation
+    private function getCurrentEvaluation(QualityAudit $audit): Evaluation
     {
         $evaluations = $audit->getEvaluations();
         if (empty($evaluations)) {
-            throw new \DomainException('No evaluations exist');
+            throw new DomainException('No evaluations exist');
         }
 
         return end($evaluations);

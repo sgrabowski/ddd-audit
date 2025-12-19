@@ -16,6 +16,7 @@ use Audit\Domain\ValueObject\Rating;
 use Audit\Domain\ValueObject\StandardId;
 use Audit\Domain\ValueObject\SupervisorId;
 use DateTimeImmutable;
+use DomainException;
 
 final class QualityAudit
 {
@@ -229,7 +230,7 @@ final class QualityAudit
     private function getCurrentEvaluation(): Evaluation
     {
         if (empty($this->evaluations)) {
-            throw new \DomainException('No evaluations exist');
+            throw new DomainException('No evaluations exist');
         }
 
         return end($this->evaluations);
