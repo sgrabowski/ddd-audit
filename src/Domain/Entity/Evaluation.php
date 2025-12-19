@@ -20,6 +20,11 @@ final class Evaluation
     private ?Withdrawal $withdrawal = null;
     private ?EvaluationId $replacedBy = null;
 
+    /**
+     * @var array<int, ClientId|SupervisorId>
+     */
+    private array $watchers = [];
+
     private function __construct(
         private readonly EvaluationId $id,
         private readonly ClientId $ownerId,
@@ -149,4 +154,50 @@ final class Evaluation
 
         $this->withdrawal = new Withdrawal($at);
     }
+
+    public function changeManager(SupervisorId $newManagerId): void
+    {
+        $this->managerId = $newManagerId;
+    }
+
+    public function addWatcher(ClientId|SupervisorId $watcherId): void
+    {
+        if ($watcherId instanceof ClientId && $watcherId->equals($this->ownerId)) {
+            throw \Audit\Domain\Exception\OwnerCannotBeWatcherException::create();
+        }
+
+        if ($watcherId instanceof SupervisorId && $watcherId->equals($this->managerId)) {
+            throw \Audit\Domain\Exception\ManagerCannotBeWatcherException::create();
+        }
+
+        foreach ($this->watchers as $existing) {
+            if ($this->watcherIdsEqual($existing, $watcherId)) {
+                return;
+            }
+        }
+
+        $this->watchers[] = $watcherId;
+    }
+
+    public function removeWatcher(ClientId|SupervisorId $watcherId): void
+    {
+        $this->watchers = array_filter(
+            $this->watchers,
+            fn ($watcher) => !$this->watcherIdsEqual($watcher, $watcherId)
+        );
+    }
+
+    private function watcherIdsEqual(ClientId|SupervisorId $a, ClientId|SupervisorId $b): bool
+    {
+        return $a->toString() === $b->toString();
+    }
+
+    /**
+     * @return array<int, ClientId|SupervisorId>
+     */
+    public function getWatchers(): array
+    {
+        return $this->watchers;
+    }
 }
+
