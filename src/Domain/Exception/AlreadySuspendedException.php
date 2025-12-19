@@ -6,10 +6,10 @@ namespace Audit\Domain\Exception;
 
 use DomainException;
 
-final class AuditDateCannotBeInFutureException extends DomainException
+final class AlreadySuspendedException extends DomainException
 {
     public static function create(): self
     {
-        return new self('Audit date cannot be in the future');
+        return new self('Evaluation is already suspended');
     }
 }

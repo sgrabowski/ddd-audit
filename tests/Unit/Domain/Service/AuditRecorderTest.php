@@ -58,7 +58,7 @@ final class AuditRecorderTest extends TestCase
         $standard = $this->createStandard();
         $supervisor = $this->createSupervisor([$standard->getId()]);
 
-        $contractRepo = new InMemoryContractRepository([]); // No contracts!
+        $contractRepo = new InMemoryContractRepository([]);
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
@@ -80,7 +80,7 @@ final class AuditRecorderTest extends TestCase
         $client = $this->createClient();
         $standard = $this->createStandard();
         $otherStandard = $this->createStandard();
-        $supervisor = $this->createSupervisor([$otherStandard->getId()]); // Wrong authority!
+        $supervisor = $this->createSupervisor([$otherStandard->getId()]);
         $contract = $this->createActiveContract($client->getId(), $supervisor->getId());
 
         $contractRepo = new InMemoryContractRepository([$contract]);
@@ -135,7 +135,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First evaluation on 2024-01-01
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -145,13 +145,13 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Try to record again 100 days later (< 180 days) - should fail
+       
         $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-04-10'), // 100 days later
+            new DateTimeImmutable('2024-04-10'),
             new DateTimeImmutable('2024-10-10')
         );
     }
@@ -168,7 +168,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First evaluation
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -178,17 +178,17 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Record again 200 days later (> 180 days) - should succeed
+       
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-07-19'), // 200 days later
+            new DateTimeImmutable('2024-07-19'),
             new DateTimeImmutable('2025-01-19')
         );
 
-        $this->assertNotNull($second);
+        $this->assertTrue($second->getOwnerId()->equals($client->getId()));
     }
 
     public function test_rejects_subsequent_negative_within_30_days(): void
@@ -206,7 +206,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First evaluation is negative
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -216,13 +216,13 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Try again 20 days later (< 30 days) - should fail
+       
         $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-01-21'), // 20 days later
+            new DateTimeImmutable('2024-01-21'),
             new DateTimeImmutable('2024-07-21')
         );
     }
@@ -239,7 +239,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First evaluation is negative
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -249,17 +249,17 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Record again 40 days later (> 30 days) - should succeed
+       
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-02-10'), // 40 days later
+            new DateTimeImmutable('2024-02-10'),
             new DateTimeImmutable('2024-08-10')
         );
 
-        $this->assertNotNull($second);
+        $this->assertTrue($second->getOwnerId()->equals($client->getId()));
     }
 
     public function test_allows_subsequent_exactly_180_days_after_positive(): void
@@ -284,7 +284,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Exactly 180 days later - should succeed
+       
         $secondAuditDate = $firstAuditDate->modify('+180 days');
         $second = $service->recordEvaluation(
             $client,
@@ -295,7 +295,7 @@ final class AuditRecorderTest extends TestCase
             $secondAuditDate->modify('+180 days')
         );
 
-        $this->assertNotNull($second);
+        $this->assertTrue($second->getOwnerId()->equals($client->getId()));
     }
 
     public function test_allows_subsequent_exactly_30_days_after_negative(): void
@@ -320,7 +320,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Exactly 30 days later - should succeed
+       
         $secondAuditDate = $firstAuditDate->modify('+30 days');
         $second = $service->recordEvaluation(
             $client,
@@ -331,7 +331,7 @@ final class AuditRecorderTest extends TestCase
             $secondAuditDate->modify('+180 days')
         );
 
-        $this->assertNotNull($second);
+        $this->assertTrue($second->getOwnerId()->equals($client->getId()));
     }
 
     public function test_positive_replaces_active_positive(): void
@@ -346,27 +346,27 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First positive evaluation
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
             new DateTimeImmutable('2024-01-01'),
-            new DateTimeImmutable('2024-08-01') // Expires Aug 1
+            new DateTimeImmutable('2024-08-01')
         );
 
-        // Second positive 200 days later, BEFORE first expires
+       
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-07-20'), // Before Aug 1 expiration
+            new DateTimeImmutable('2024-07-20'),
             new DateTimeImmutable('2025-01-20')
         );
 
-        // BR-13: First should be replaced
+       
         $this->assertTrue($first->isReplaced());
         $this->assertFalse($second->isReplaced());
     }
@@ -383,7 +383,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First positive evaluation
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -393,7 +393,7 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-08-01')
         );
 
-        // Second is negative - BR-14: should NOT replace
+       
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -418,7 +418,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First positive expires July 1
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -428,17 +428,17 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Second audit on July 20 (after first expired) - no replacement
+       
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-07-20'), // After expiration
+            new DateTimeImmutable('2024-07-20'),
             new DateTimeImmutable('2025-01-20')
         );
 
-        $this->assertFalse($first->isReplaced()); // Not replaced, just expired
+        $this->assertFalse($first->isReplaced());
     }
 
     public function test_negative_cannot_be_replaced_by_subsequent_positive(): void
@@ -453,7 +453,7 @@ final class AuditRecorderTest extends TestCase
         $auditRepo = new \Audit\Infrastructure\Repository\InMemoryQualityAuditRepository();
         $service = new AuditRecorder($contractRepo, $auditRepo, $clock);
 
-        // First negative evaluation
+       
         $first = $service->recordEvaluation(
             $client,
             $supervisor,
@@ -463,17 +463,17 @@ final class AuditRecorderTest extends TestCase
             new DateTimeImmutable('2024-07-01')
         );
 
-        // Subsequent positive 40 days later
+       
         $second = $service->recordEvaluation(
             $client,
             $supervisor,
             $standard,
             Rating::Positive,
-            new DateTimeImmutable('2024-02-10'), // 40 days later (> 30)
+            new DateTimeImmutable('2024-02-10'),
             new DateTimeImmutable('2024-08-10')
         );
 
-        // BR-14: Negative cannot be replaced
+       
         $this->assertFalse($first->isReplaced());
     }
 }

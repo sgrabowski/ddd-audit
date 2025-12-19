@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Audit\Tests\Unit\Domain\ValueObject;
 
-use Audit\Domain\Exception\ExpirationDateTooEarlyException;
 use Audit\Domain\Exception\AuditDateCannotBeInFutureException;
+use Audit\Domain\Exception\ExpirationDateTooEarlyException;
 use Audit\Domain\ValueObject\EvaluationReport;
 use Audit\Domain\ValueObject\Rating;
 use Audit\Domain\ValueObject\StandardId;
@@ -42,7 +42,7 @@ final class EvaluationReportTest extends TestCase
 
         $clock = FixedClock::at('2024-06-01');
         $auditDate = new DateTimeImmutable('2024-01-15');
-        $expirationDate = new DateTimeImmutable('2024-07-12'); // 179 days - too early
+        $expirationDate = new DateTimeImmutable('2024-07-12');
 
         EvaluationReport::create(
             Rating::Positive,
@@ -75,7 +75,7 @@ final class EvaluationReportTest extends TestCase
         $this->expectException(AuditDateCannotBeInFutureException::class);
 
         $clock = FixedClock::at('2024-06-01');
-        $futureDate = new DateTimeImmutable('2024-06-02'); // 1 day in future
+        $futureDate = new DateTimeImmutable('2024-06-02');
         $expirationDate = $futureDate->modify('+180 days');
 
         EvaluationReport::create(
@@ -91,7 +91,7 @@ final class EvaluationReportTest extends TestCase
     {
         $clock = FixedClock::at('2024-06-01');
         $pastAuditDate = new DateTimeImmutable('2020-01-01');
-        $pastExpirationDate = new DateTimeImmutable('2020-07-01'); // Already expired
+        $pastExpirationDate = new DateTimeImmutable('2020-07-01');
 
         $report = EvaluationReport::create(
             Rating::Positive,

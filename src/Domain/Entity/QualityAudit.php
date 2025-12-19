@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Audit\Domain\Entity;
 
+use Audit\Domain\Event\EvaluationSuspended;
+use Audit\Domain\Event\EvaluationUnlocked;
+use Audit\Domain\Event\EvaluationWithdrawn;
 use Audit\Domain\Exception\CannotAuditTooSoonException;
 use Audit\Domain\Service\Clock;
 use Audit\Domain\ValueObject\ClientId;
@@ -23,6 +26,11 @@ final class QualityAudit
      * @var array<Evaluation>
      */
     private array $evaluations = [];
+
+    /**
+     * @var array<object>
+     */
+    private array $recordedEvents = [];
 
     public function __construct(
         private readonly ClientId $clientId,
@@ -130,7 +138,7 @@ final class QualityAudit
         DateTimeImmutable $from,
         DateTimeImmutable $to
     ): int {
-        return $from->diff($to)->days;
+        return (int) $from->diff($to)->days;
     }
 
     private function replaceActivePositive(DateTimeImmutable $newAuditDate, EvaluationId $newId): void
@@ -151,7 +159,7 @@ final class QualityAudit
         $sorted = $this->evaluations;
         usort(
             $sorted,
-            fn(Evaluation $a, Evaluation $b) =>
+            fn (Evaluation $a, Evaluation $b) =>
                 $b->getReport()->auditDate <=> $a->getReport()->auditDate
         );
 
@@ -167,5 +175,63 @@ final class QualityAudit
         }
 
         return null;
+    }
+
+    public function suspendCurrent(Clock $clock): void
+    {
+        $current = $this->getCurrentEvaluation();
+        $current->suspend($clock->now(), $clock);
+
+        $this->recordEvent(new EvaluationSuspended(
+            $current->getId(),
+            $clock->now()
+        ));
+    }
+
+    public function unlockCurrent(Clock $clock): void
+    {
+        $current = $this->getCurrentEvaluation();
+        $current->unlock();
+
+        $this->recordEvent(new EvaluationUnlocked(
+            $current->getId(),
+            $clock->now()
+        ));
+    }
+
+    public function withdrawCurrent(Clock $clock): void
+    {
+        $current = $this->getCurrentEvaluation();
+        $current->withdraw($clock->now(), $clock);
+
+        $this->recordEvent(new EvaluationWithdrawn(
+            $current->getId(),
+            $clock->now()
+        ));
+    }
+
+    /**
+     * @return array<object>
+     */
+    public function popEvents(): array
+    {
+        $events = $this->recordedEvents;
+        $this->recordedEvents = [];
+        return $events;
+    }
+
+    private function recordEvent(object $event): void
+    {
+        $this->recordedEvents[] = $event;
+    }
+
+
+    private function getCurrentEvaluation(): Evaluation
+    {
+        if (empty($this->evaluations)) {
+            throw new \DomainException('No evaluations exist');
+        }
+
+        return end($this->evaluations);
     }
 }

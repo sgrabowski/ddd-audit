@@ -20,16 +20,12 @@ final class Evaluation
     private ?Withdrawal $withdrawal = null;
     private ?EvaluationId $replacedBy = null;
 
-    /**
-     * @param array<ClientId|SupervisorId> $watchers
-     */
     private function __construct(
         private readonly EvaluationId $id,
         private readonly ClientId $ownerId,
         private SupervisorId $managerId,
         private readonly StandardId $standardId,
         private readonly EvaluationReport $report,
-        private array $watchers = [],
     ) {
     }
 
@@ -113,5 +109,44 @@ final class Evaluation
     public function markAsReplaced(EvaluationId $replacedBy): void
     {
         $this->replacedBy = $replacedBy;
+    }
+
+    public function suspend(DateTimeImmutable $at, Clock $clock): void
+    {
+        if ($this->isExpired($clock)) {
+            throw \Audit\Domain\Exception\CannotLockExpiredException::create();
+        }
+
+        if ($this->isSuspended()) {
+            throw \Audit\Domain\Exception\AlreadySuspendedException::create();
+        }
+
+        if ($this->isWithdrawn()) {
+            throw \Audit\Domain\Exception\CannotSuspendWithdrawnException::create();
+        }
+
+        $this->suspension = new Suspension($at);
+    }
+
+    public function unlock(): void
+    {
+        if (!$this->isSuspended()) {
+            throw \Audit\Domain\Exception\CannotUnlockException::notSuspended();
+        }
+
+        $this->suspension = null;
+    }
+
+    public function withdraw(DateTimeImmutable $at, Clock $clock): void
+    {
+        if ($this->isExpired($clock)) {
+            throw \Audit\Domain\Exception\CannotLockExpiredException::create();
+        }
+
+        if ($this->isWithdrawn()) {
+            throw \Audit\Domain\Exception\AlreadyWithdrawnException::create();
+        }
+
+        $this->withdrawal = new Withdrawal($at);
     }
 }

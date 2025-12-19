@@ -51,7 +51,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-        // 100 days later - too soon
+       
         $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
@@ -74,7 +74,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-        // 200 days later - OK
+       
         $second = $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
@@ -83,7 +83,6 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-        $this->assertNotNull($second);
         $this->assertCount(2, $audit->getEvaluations());
     }
 
@@ -96,15 +95,15 @@ final class QualityAuditTest extends TestCase
             SupervisorId::generate(),
             Rating::Positive,
             new DateTimeImmutable('2024-01-01'),
-            new DateTimeImmutable('2024-08-01'), // Expires Aug 1
+            new DateTimeImmutable('2024-08-01'),
             $clock
         );
 
-        // Second before first expires - replacement!
+       
         $second = $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Positive,
-            new DateTimeImmutable('2024-07-20'), // Before Aug 1
+            new DateTimeImmutable('2024-07-20'),
             new DateTimeImmutable('2025-01-20'),
             $clock
         );
@@ -126,7 +125,7 @@ final class QualityAuditTest extends TestCase
             $clock
         );
 
-        // Negative doesn't replace
+       
         $second = $audit->recordEvaluation(
             SupervisorId::generate(),
             Rating::Negative,
