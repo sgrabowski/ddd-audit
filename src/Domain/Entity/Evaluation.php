@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Audit\Domain\Entity;
 
+use Audit\Domain\Exception\AlreadySuspendedException;
+use Audit\Domain\Exception\AlreadyWithdrawnException;
+use Audit\Domain\Exception\CannotLockExpiredException;
+use Audit\Domain\Exception\CannotSuspendWithdrawnException;
+use Audit\Domain\Exception\CannotUnlockException;
+use Audit\Domain\Exception\ManagerCannotBeWatcherException;
+use Audit\Domain\Exception\OwnerCannotBeWatcherException;
 use Audit\Domain\Service\Clock;
 use Audit\Domain\ValueObject\ClientId;
 use Audit\Domain\ValueObject\EvaluationId;
@@ -119,15 +126,15 @@ final class Evaluation
     public function suspend(DateTimeImmutable $at, Clock $clock): void
     {
         if ($this->isExpired($clock)) {
-            throw \Audit\Domain\Exception\CannotLockExpiredException::create();
+            throw CannotLockExpiredException::create();
         }
 
         if ($this->isSuspended()) {
-            throw \Audit\Domain\Exception\AlreadySuspendedException::create();
+            throw AlreadySuspendedException::create();
         }
 
         if ($this->isWithdrawn()) {
-            throw \Audit\Domain\Exception\CannotSuspendWithdrawnException::create();
+            throw CannotSuspendWithdrawnException::create();
         }
 
         $this->suspension = new Suspension($at);
@@ -136,7 +143,7 @@ final class Evaluation
     public function unlock(): void
     {
         if (!$this->isSuspended()) {
-            throw \Audit\Domain\Exception\CannotUnlockException::notSuspended();
+            throw CannotUnlockException::notSuspended();
         }
 
         $this->suspension = null;
@@ -145,11 +152,11 @@ final class Evaluation
     public function withdraw(DateTimeImmutable $at, Clock $clock): void
     {
         if ($this->isExpired($clock)) {
-            throw \Audit\Domain\Exception\CannotLockExpiredException::create();
+            throw CannotLockExpiredException::create();
         }
 
         if ($this->isWithdrawn()) {
-            throw \Audit\Domain\Exception\AlreadyWithdrawnException::create();
+            throw AlreadyWithdrawnException::create();
         }
 
         $this->withdrawal = new Withdrawal($at);
@@ -163,11 +170,11 @@ final class Evaluation
     public function addWatcher(ClientId|SupervisorId $watcherId): void
     {
         if ($watcherId instanceof ClientId && $watcherId->equals($this->ownerId)) {
-            throw \Audit\Domain\Exception\OwnerCannotBeWatcherException::create();
+            throw OwnerCannotBeWatcherException::create();
         }
 
         if ($watcherId instanceof SupervisorId && $watcherId->equals($this->managerId)) {
-            throw \Audit\Domain\Exception\ManagerCannotBeWatcherException::create();
+            throw ManagerCannotBeWatcherException::create();
         }
 
         foreach ($this->watchers as $existing) {
